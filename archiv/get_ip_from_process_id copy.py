@@ -7,49 +7,62 @@ import pyperfmon
 
 #---------------------------Einfaches Beispiel-------------------------------------------------------
 #                   Get process IDs for specific application instances
+teams_filter=['Teams.exe']
+webex_filter=['webex', 'atmgr']
+#webex_filter=['webex']
+my_filter_list=webex_filter
 c_default=wmi.WMI()
-application="Teams.exe"
 list_of_process_ids=[]
-for process in c_default.Win32_Process(name=application):
-   print(process.ProcessId, process.Name)
-   list_of_process_ids.append(process.ProcessId)
-for process in c_default.Win32_PerfRawData_PerfProc_Process():
-    if process.IDProcess in list_of_process_ids:
-        print(process.IDProcess)
-#-----------------------Ende einfaches Beispiel-------------------------------------------------------
-#-------------------------------------Change Namespace for MSFT_NetTCPConnection
-c_cimv2 = wmi.WMI(namespace="StandardCimv2")
-tcp_class=c_cimv2.MSFT_NetTCPConnection
-#list_of_properties=['AggregationBehavior','AppliedSetting', 'AvailableRequestedStates', 'Caption', 'CommunicationStatus', 'CreationTime', 'Description', 'DetailedStatus', 'Directionality', 'ElementName', 'EnabledDefault', 'EnabledState', 'HealthState', 'InstallDate', 'InstanceID', 'LocalAddress', 'LocalPort', 'Name', 'OffloadState', 'OperatingStatus', 'OperationalStatus', 'OtherEnabledState', 'OwningProcess', 'PrimaryStatus', 'RemoteAddress', 'RemotePort', 'RequestedState', 'State', 'Status', 'StatusDescriptions', 'TimeOfLastStateChange', 'TransitioningToState']
+#for process in c_default.Win32_Process(name=application):
+while True:
+        process_list=c_default.Win32_Process()
+        for process in process_list:
+                if any(True for x in my_filter_list if x in str(process.Name.lower())):               
+                
+                #for process in c_default.Win32_Process():
+                        print(process.ProcessId, process.Name)
+                        list_of_process_ids.append(process.ProcessId)
+        for process in c_default.Win32_PerfRawData_PerfProc_Process():
+                if process.IDProcess in list_of_process_ids:
+                        print(process.IDProcess)
+        #-----------------------Ende einfaches Beispiel-------------------------------------------------------
+        #-------------------------------------Change Namespace for MSFT_NetTCPConnection
+        c_cimv2 = wmi.WMI(namespace="StandardCimv2")
+        tcp_class=c_cimv2.MSFT_NetTCPConnection
+        #list_of_properties=['AggregationBehavior','AppliedSetting', 'AvailableRequestedStates', 'Caption', 'CommunicationStatus', 'CreationTime', 'Description', 'DetailedStatus', 'Directionality', 'ElementName', 'EnabledDefault', 'EnabledState', 'HealthState', 'InstallDate', 'InstanceID', 'LocalAddress', 'LocalPort', 'Name', 'OffloadState', 'OperatingStatus', 'OperationalStatus', 'OtherEnabledState', 'OwningProcess', 'PrimaryStatus', 'RemoteAddress', 'RemotePort', 'RequestedState', 'State', 'Status', 'StatusDescriptions', 'TimeOfLastStateChange', 'TransitioningToState']
 
-list_of_ip_address=[]
-#print(my_class.properties)
-for item in tcp_class.instances():
-        if item.OwningProcess in list_of_process_ids:
-              #print(item.CreationTime,item.OwningProcess, item.LocalAddress, item.RemoteAddress, item.AppliedSetting,  item.Description)
-              list_of_ip_address.append(item.RemoteAddress)
-set_list_of_ip_address=set(list_of_ip_address)
-set_list_of_ip_address.discard('0.0.0.0')
-list_of_ip_address=list(set_list_of_ip_address)
-print(len(list_of_ip_address))
+        list_of_ip_address=[]
+        #print(my_class.properties)
+        for item in tcp_class.instances():
+                if item.OwningProcess in list_of_process_ids:
+                        #print(item.CreationTime,item.OwningProcess, item.LocalAddress, item.RemoteAddress, item.AppliedSetting,  item.Description)
+                        list_of_ip_address.append((item.OwningProcess,item.RemoteAddress))
+        set_list_of_ip_address=set(list_of_ip_address)
+        set_list_of_ip_address.discard('0.0.0.0')
+        list_of_ip_address=list(set_list_of_ip_address)
+        print(list_of_ip_address)
 
 
-udp_class=c_cimv2.MSFT_NetUDPEndpoint
-#list_of_properties=['AggregationBehavior','AppliedSetting', 'AvailableRequestedStates', 'Caption', 'CommunicationStatus', 'CreationTime', 'Description', 'DetailedStatus', 'Directionality', 'ElementName', 'EnabledDefault', 'EnabledState', 'HealthState', 'InstallDate', 'InstanceID', 'LocalAddress', 'LocalPort', 'Name', 'OffloadState', 'OperatingStatus', 'OperationalStatus', 'OtherEnabledState', 'OwningProcess', 'PrimaryStatus', 'RemoteAddress', 'RemotePort', 'RequestedState', 'State', 'Status', 'StatusDescriptions', 'TimeOfLastStateChange', 'TransitioningToState']
+        udp_class=c_cimv2.MSFT_NetUDPEndpoint
+        #list_of_properties=['AggregationBehavior','AppliedSetting', 'AvailableRequestedStates', 'Caption', 'CommunicationStatus', 'CreationTime', 'Description', 'DetailedStatus', 'Directionality', 'ElementName', 'EnabledDefault', 'EnabledState', 'HealthState', 'InstallDate', 'InstanceID', 'LocalAddress', 'LocalPort', 'Name', 'OffloadState', 'OperatingStatus', 'OperationalStatus', 'OtherEnabledState', 'OwningProcess', 'PrimaryStatus', 'RemoteAddress', 'RemotePort', 'RequestedState', 'State', 'Status', 'StatusDescriptions', 'TimeOfLastStateChange', 'TransitioningToState']
 
-list_of_ip_address=[]
-#print(my_class.properties)
-for item in udp_class.instances():        
-        if item.OwningProcess in list_of_process_ids:
-              #print(item.CreationTime,item.OwningProcess, item.LocalAddress, item.RemoteAddress, item.AppliedSetting,  item.Description)
-              list_of_ip_address.append(item.LocalAddress)
-set_list_of_ip_address=set(list_of_ip_address)
-#set_list_of_ip_address.discard('0.0.0.0')
-list_of_ip_address=list(set_list_of_ip_address)
-print(f'UDP {list_of_ip_address}')
-# udp_class=c_cimv2.MSFT_NetUDPEndpoint
-# for item in udp_class.instances():  
-#         print(item.CreationTime,item.OwningProcess, item.LocalAddress )
+        list_of_ip_address=[]
+        #print(my_class.properties)
+        
+        for item in udp_class.instances():
+                
+                if item.OwningProcess in list_of_process_ids:
+                  
+                  
+                  print(item.CreationTime,item.OwningProcess, item.LocalAddress, item.RemoteAddress, item.AppliedSetting,  item.Description)
+                  list_of_ip_address.append(item.LocalAddress)
+        set_list_of_ip_address=set(list_of_ip_address)
+        #set_list_of_ip_address.discard('0.0.0.0')
+        list_of_ip_address=list(set_list_of_ip_address)
+        print(f'UDP {list_of_ip_address}')
+        # udp_class=c_cimv2.MSFT_NetUDPEndpoint
+        # for item in udp_class.instances():  
+        #         print(item.CreationTime,item.OwningProcess, item.LocalAddress )
 
 
 

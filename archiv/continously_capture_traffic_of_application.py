@@ -65,7 +65,12 @@ def packet_callback(packet):
             prot_ip_port_dst=('TCP', packet.ip.dst.value, str(packet.tcp.dstport))
             if (prot_ip_port_src in list_of_prot_ip_port) or (prot_ip_port_dst in list_of_prot_ip_port):        
                 print('MATCH!!!')
-                print(f'protocol: {packet.transport_layer} src: {packet.ip.src.value} dst: {packet.ip.dst.value} RTT: {packet.tcp.analysis_ack_rtt}')
+                if hasattr(packet.tcp, "analysis_ack_rtt"):
+                
+                    print(f'protocol: {packet.transport_layer} src: {packet.ip.src.value} dst: {packet.ip.dst.value} RTT: {packet.tcp.analysis_ack_rtt}')
+                else:
+                    print(f'protocol: {packet.transport_layer} src: {packet.ip.src.value} dst: {packet.ip.dst.value} RTT: {packet.tcp.analysis_ack_rtt}')
+
        # print(prot_ip_port_dst, prot_ip_port_src)
        # print(list_of_prot_ip_port)
             
@@ -80,7 +85,7 @@ def packet_callback(packet):
     
 
 
-capture = pyshark.LiveCapture(interface='ethernet 3',  use_ek=True)
+capture = pyshark.LiveCapture(interface='ethernet',  use_ek=True)
 for packet in capture.sniff_continuously():
     capture.apply_on_packets(packet_callback)
        

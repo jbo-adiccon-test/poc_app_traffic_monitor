@@ -9,7 +9,7 @@ import pandas as pd
 
 # https://learn.microsoft.com/en-us/previous-versions/windows/desktop/nettcpipprov/msft-nettcpconnection
 #
-import pyperfmon
+#import pyperfmon
 
 #---------------------------Einfaches Beispiel-------------------------------------------------------
 #                   Get process IDs for specific application instances
@@ -59,7 +59,7 @@ if len(list_of_ip_address) > 0:
 print(bpf_filter)
 
 #tcp_capture = pyshark.LiveCapture(interface='ethernet 3', bpf_filter=bpf_filter, use_ek=True)
-tcp_capture = pyshark.LiveCapture(interface='ethernet 3',  use_ek=True)
+tcp_capture = pyshark.LiveCapture(interface='ethernet',  use_ek=True)
 
 
 df_rtcp=pd.DataFrame()
