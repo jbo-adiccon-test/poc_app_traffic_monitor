@@ -5,32 +5,28 @@ import wmi
 import pyshark
 from pyshark import ek_field_mapping
 import pandas as pd
-import json
+import os
+import socket
 import time
 from threading import Thread
-import socket
-import os
+import json
 
-
-CAPTUREINTERFACE = "WLAN"
-# CAPTUREINTERFACE = "ethernet"
-app='-slack'
+#from sys import exit
+# CAPTUREINTERFACE = "WLAN"
+CAPTUREINTERFACE = "ethernet"
+app='-outlook'
+data_path=r"C:\Users\bodensohn\git\poc_app_traffic_monitor\data"
+file_name=time.strftime("%m%d%H%M%S", time.localtime())+app
+data_path=data_path+ "\\" + file_name
 
 # Config:
 READER_PORT = 4000
 SERVER_PORT = 4001
 SHOW_PORT = 4002
 
-
-
-
 global list_of_prot_ip_port
 list_of_prot_ip_port = None
-file_name=time.strftime("%H%M%S", time.localtime())+app
-
-
-
-
+global write2ndjson
 
 
 def get_socket_data():
@@ -43,7 +39,7 @@ def get_socket_data():
         Socket.settimeout(1.0)
         try:
             data = Socket.recv(65536)
-            #print('data received')
+           # print('data received')
         except:
             data = b''
             print('receiving data failed')
@@ -56,8 +52,37 @@ def get_socket_data():
         item=list(set(item))
         #print(item)
         if item != [] and item != None and len(item) > 1:
-            #print(item)
+          #  print(item)
             list_of_prot_ip_port = item
+
+class Write2ndjson:
+    def check_working_dir(self, working_dir):
+        if not os.path.exists(working_dir):          
+            os.makedirs(working_dir)  
+
+    def __init__(self, name, working_dir, NMAX = 100):
+        self.name = name
+        self.NMAX = NMAX
+        self.counter = 0
+        self.working_dir=working_dir
+        self.check_working_dir(self.working_dir)   
+        
+    def increment_counter(self):
+        self.counter += 1
+
+    def get_file_name(self):
+        file=str(int(self.counter/self.NMAX)) + "_"+ self.name + ".ndjson"
+        return os.path.join(self.working_dir, file)
+        #return self.working_dir+"/"+str(int(self.counter/self.NMAX)) + "_"+ self.name + ".ndjson"
+
+    def writeline2ndjson(self, line):
+        filename = self.get_file_name()
+        self.increment_counter()
+        file = open(filename, "a", encoding="utf-8")
+        json.dump(line, file)
+        #file.write(line)
+        file.write('\n')
+        file.close()
 
 def get_data_from_ip(packet):
     line={}
@@ -124,69 +149,35 @@ def get_data_from_ipv6(packet):
             print(line)   
     return line
 
-class Write2ndjson:
-    def check_working_dir(self, working_dir):
-        if not os.path.exists("./"+working_dir):          
-            os.makedirs("./"+working_dir)  
-
-    def __init__(self, name, NMAX = 100):
-        self.name = name
-        self.NMAX = NMAX
-        self.counter = 0
-        self.working_dir="./"+name
-        self.check_working_dir(self.working_dir)   
-        
-    def increment_counter(self):
-        self.counter += 1
-
-    def get_file_name(self):
-        return self.working_dir+"/"+str(int(self.counter/self.NMAX)) + "_"+ self.name + ".ndjson"
-
-    def writeline2ndjson(self, line):
-        filename = self.get_file_name()
-        self.increment_counter()
-        file = open(filename, "a", encoding="utf-8")
-        json.dump(line, file)
-        #file.write(line)
-        file.write('\n')
-        file.close()
-
 def packet_callback(packet):
-    global write2ndjson 
-    try:
-        line=[]
+    global write2ndjson     
+    global list_of_prot_ip_port
 
+    try:
+        
+        '''Geht das asyncron, so dass die Liste nur ein update erhält, wenn sie sich verändert hat.'''
+        line=[]
         if hasattr(packet, 'ip'):
             line=get_data_from_ip(packet)
         elif hasattr(packet, 'ipv6'):
             line=get_data_from_ipv6(packet)
-        #print('line:', line)
-            # we dump lines to file in ndjson format
-
-        # with open(file_name, 'a', encoding='utf-8') as my_file:
-        #     if len(line) > 4:
-        #         json.dump(line, my_file)
-        #         my_file.write('\n')
-
-        if len(line) > 4:
-            
-            write2ndjson.writeline2ndjson(line)
-    except:
-        print('Error in packet callback')
+        #print('line:', line)        
+        if len(line) > 4:                
+            write2ndjson.writeline2ndjson(line)          
+    except:        
         pass
+    
 
-# create a new thread
-thread = Thread(target=get_socket_data)
+
+write2ndjson= Write2ndjson(file_name, data_path, 1000)
+
+# create a new thread to fetch list of protocolip and port
+thread_fetch_list_of_protcol_ip_port = Thread(target=get_socket_data)
 # start the thread
-thread.start()
+thread_fetch_list_of_protcol_ip_port.start()
 
-global write2ndjson
-write2ndjson= Write2ndjson(file_name, 5000)
-
+'''Main process to capture packet from interface and add packet to pdeque'''
 capture = pyshark.LiveCapture(interface=CAPTUREINTERFACE, bpf_filter='ip or ip6', use_ek=True)
 for packet in capture.sniff_continuously():
-    if list_of_prot_ip_port != None:
-        capture.apply_on_packets(packet_callback)
-
-
+    capture.apply_on_packets(packet_callback)
        

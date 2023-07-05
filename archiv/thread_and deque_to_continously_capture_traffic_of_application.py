@@ -183,9 +183,9 @@ def process_deque():
 
 
 # create a new thread
-thread_fetch = Thread(target=get_socket_data)
+thread_fetch_list_of_protcol_ip_port = Thread(target=get_socket_data)
 # start the thread
-thread_fetch.start()
+thread_fetch_list_of_protcol_ip_port.start()
 
 write2ndjson= Write2ndjson(file_name, 1000)
 pqueue=deque()

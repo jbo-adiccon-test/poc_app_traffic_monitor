@@ -8,7 +8,7 @@ import plotly.express as px
 global df_group
 df_group = pd.DataFrame()
 
-working_dir=r'C:\\Users\bodensohn\\git\\poc_app_traffic_monitor\\163732-slack\\'
+working_dir=r'C:\Users\bodensohn\git\poc_app_traffic_monitor\data\163732-slack'
 name_it='slack.ndjson'
 time_interval='10s'
 period=400
@@ -49,7 +49,7 @@ def read_list_of_files_within_time(working_dir, period):
             if os.path.isfile(file_path) and (os.stat(file_path).st_ctime > latest_creation_time - period):
                 new_file_list.append(file)            
     except:
-        pass
+        pass   
     return set(new_file_list)
 
 
@@ -62,14 +62,23 @@ def create_basic_dataframe(working_dir, period):
     for filename in file_list:
         if (filename.find(name_it)!=-1):
             try:
-                df_file = pd.concat([df_file, pd.read_json(working_dir+filename, lines=True)])                  
+                file_path = os.path.join(working_dir, filename)
+                # df_read=pd.read_json(file_path, lines=True)
+                # df_read['time']=df_read['time'].astype('string')
+                # df_read['timestamp']=pd.to_datetime(df_read['time'], origin='unix', unit='s')
+                # df_read['interval']=pd.DatetimeIndex(df_read['timestamp']).ceil(time_interval)
+                # df_read['flow_info'] = list(zip(df_read.protocol,df_read.src, df_read.srcport, df_read.dst, df_read.dstport))                
+                # # df_file=pd.concat([df_file, df_read])
+                df_file = pd.concat([df_file, pd.read_json(file_path, lines=True)])                  
             except Exception as ex:  # pylint: disable=broad-except
+                print('error in create_basic_dataframe')
                 continue
-            
+    print(df_file.columns)         
     df_file['time']=df_file['time'].astype('string')
     df_file['timestamp']=pd.to_datetime(df_file['time'], origin='unix', unit='s')
     df_file['interval']=pd.DatetimeIndex(df_file['timestamp']).ceil(time_interval)
     df_file['flow_info'] = list(zip(df_file.protocol,df_file.src, df_file.srcport, df_file.dst, df_file.dstport))
+
     return df_file 
 
 def create_df_group(df_file, time_interval):
